@@ -24,6 +24,7 @@ from openai import OpenAI
 
 from environment import CodeReviewEnvironment
 from models import CodeReviewAction as Action, CodeReviewObservation as Observation
+from tasks import TASKS
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Environment variables — exactly as required by the spec
@@ -342,7 +343,7 @@ def run_episode(task_id: str) -> EpisodeResult:
 
 
 def run_all_tasks(
-    task_ids: Sequence[str] = ("easy", "medium", "hard", "expert", "adversarial"),
+    task_ids: Sequence[str] = tuple(TASKS.keys()),
 ) -> List[EpisodeResult]:
     results = [run_episode(task_id=t) for t in task_ids]
     avg = sum(r.final_score for r in results) / len(results)
