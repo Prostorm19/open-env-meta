@@ -24,7 +24,6 @@ from openai import OpenAI
 
 from environment import CodeReviewEnvironment
 from models import CodeReviewAction as Action, CodeReviewObservation as Observation
-from tasks import TASKS
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Environment variables — exactly as required by the spec
@@ -38,12 +37,6 @@ if HF_TOKEN is None:
     raise ValueError("HF_TOKEN environment variable is required")
 
 ENV_NAME = "code-review-openenv"
-MIN_TASK_SCORE = 0.01
-MAX_TASK_SCORE = 0.99
-
-
-def _strict_open_score(value: float) -> float:
-    return max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, float(value)))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OpenAI client — must use OpenAI client for all LLM calls
@@ -251,7 +244,7 @@ class EpisodeResult:
     success: bool
     steps: int
     rewards: List[float] = field(default_factory=list)
-    final_score: float = MIN_TASK_SCORE
+    final_score: float = 0.0
 
 
 def run_episode(task_id: str) -> EpisodeResult:
@@ -293,7 +286,6 @@ def run_episode(task_id: str) -> EpisodeResult:
                 )
 
             obs, reward, done, info = env.step(action)
-            reward = _strict_open_score(reward)
             rewards.append(reward)
             steps = step_idx
 
@@ -318,15 +310,15 @@ def run_episode(task_id: str) -> EpisodeResult:
             if done:
                 break
 
-        final_score = _strict_open_score(env.final_score())
+        final_score = env.final_score()
         success = final_score >= 0.5
 
     except Exception as exc:
         last_error = str(exc).replace("\n", " ")[:120]
-        final_score = _strict_open_score(env.final_score()) if steps > 0 else MIN_TASK_SCORE
+        final_score = env.final_score() if steps > 0 else 0.01
         success = False
         if not rewards:
-            rewards = [MIN_TASK_SCORE]
+            rewards = [0.0]
         steps = max(steps, len(rewards))
 
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
@@ -344,12 +336,12 @@ def run_episode(task_id: str) -> EpisodeResult:
         success=success,
         steps=steps,
         rewards=rewards,
-        final_score=_strict_open_score(final_score),
+        final_score=final_score,
     )
 
 
 def run_all_tasks(
-    task_ids: Sequence[str] = tuple(TASKS.keys()),
+    task_ids: Sequence[str] = ("easy", "medium", "hard", "expert", "adversarial"),
 ) -> List[EpisodeResult]:
     results = [run_episode(task_id=t) for t in task_ids]
     avg = sum(r.final_score for r in results) / len(results)

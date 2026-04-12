@@ -71,7 +71,7 @@ class TestStep:
         env.reset()
         for _ in range(3):
             _, reward, _, _ = env.step(_perfect_action_easy_1())
-            assert 0.0 < reward < 1.0
+            assert 0.0 <= reward <= 1.0
 
     def test_wrong_file_gives_zero(self):
         env = CodeReviewEnvironment("easy")
@@ -84,7 +84,7 @@ class TestStep:
             confidence=0.5,
         )
         _, reward, _, _ = env.step(action)
-        assert 0.0 < reward < 1.0
+        assert reward == 0.0
 
     def test_episode_ends_when_all_found(self):
         env = CodeReviewEnvironment("easy")
@@ -115,7 +115,7 @@ class TestStep:
             env.step(_perfect_action_easy_1())
         _, reward, done, info = env.step(_perfect_action_easy_1())
         assert done is True
-        assert 0.0 < reward < 1.0
+        assert reward == 0.0
 
 
 class TestTasks:
