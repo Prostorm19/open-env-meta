@@ -264,7 +264,7 @@ def episode_score(
     score = _to_open_unit_interval(score)
 
     return Reward(
-        score=round(score, 4),
+        score=round(score, 6),
         breakdown={
             "severity_weighted_recall": round(recall, 4),
             "precision": round(precision, 4),
