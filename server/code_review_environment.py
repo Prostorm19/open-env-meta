@@ -85,7 +85,7 @@ class CodeReviewEnvironment:
         if self._done:
             obs = self._make_obs()
             obs.done = True
-            obs.reward = 0.0
+            obs.reward = 1e-6
             return obs
 
         if action.action_type == "ask_question":
@@ -156,14 +156,14 @@ class CodeReviewEnvironment:
             ClarificationQA(question=action.question or "", answer=answer)
         )
         self._last_feedback = f"Q: {action.question} → A: {answer}"
-        return 0.0
+        return 1e-6
 
     def _handle_hint(self, action: CodeReviewAction) -> float:
         """Request a hint — costs 2 steps worth of reward budget, reveals file+severity of an unfound issue."""
         unfound = [i for i in self._planted_issues if i.issue_id not in self._issues_found]
         if not unfound:
             self._last_feedback = "No more issues to hint at — you've found them all."
-            return 0.0
+            return 1e-6
         # Give a hint about the highest-severity unfound issue
         from graders import SEVERITY_WEIGHTS
         target = max(unfound, key=lambda i: SEVERITY_WEIGHTS.get(i.severity, 1.0))
@@ -175,7 +175,7 @@ class CodeReviewEnvironment:
         self._last_feedback = hint
         # Costs 2 steps — advance step count by 1 extra
         self._step_count += 1
-        return 0.0
+        return 1e-6
 
     def _handle_report(self, action: CodeReviewAction) -> float:
         reward, breakdown = compute_reward(

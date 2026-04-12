@@ -125,7 +125,7 @@ class TestComputeReward:
         issue = _make_issue()
         action = _make_action()
         score, _ = compute_reward(action, [issue], [])
-        assert 0.0 <= score <= 1.0
+        assert 0.0 < score < 1.0
 
     def test_already_found_penalty(self):
         issue = _make_issue()
@@ -137,14 +137,14 @@ class TestComputeReward:
     def test_no_issues_returns_zero(self):
         action = _make_action()
         score, _ = compute_reward(action, [], [])
-        assert score == 0.0
+        assert 0.0 < score < 1.0
 
 
 class TestEpisodeScore:
     def test_all_found_and_fixed(self):
         issues = [_make_issue(issue_id="a"), _make_issue(issue_id="b")]
         reward = episode_score(issues, ["a", "b"], ["a", "b"])
-        assert reward.score == 1.0
+        assert 0.0 < reward.score < 1.0
 
     def test_none_found(self):
         issues = [_make_issue(issue_id="a")]
@@ -161,4 +161,4 @@ class TestEpisodeScore:
         issues = [_make_issue(issue_id=str(i)) for i in range(5)]
         found = [str(i) for i in range(3)]
         reward = episode_score(issues, found, found[:1])
-        assert 0.0 <= reward.score <= 1.0
+        assert 0.0 < reward.score < 1.0

@@ -30,6 +30,12 @@ class Reward(NamedTuple):
 
 
 LINE_TOLERANCE = 3
+OPEN_INTERVAL_EPSILON = 1e-6
+
+
+def _to_open_unit_interval(value: float, eps: float = OPEN_INTERVAL_EPSILON) -> float:
+    """Clamp values to the strict open interval (0, 1)."""
+    return max(eps, min(1.0 - eps, value))
 
 # Severity weights for recall calculation — missing critical hurts much more
 SEVERITY_WEIGHTS: Dict[str, float] = {
@@ -162,10 +168,10 @@ def compute_reward(
 
     # False positive check — penalize immediately
     if _is_false_positive(action, fp_targets):
-        return -0.15, {"matched_issue": None, "false_positive": True, "factors": {}}
+        return _to_open_unit_interval(-0.15), {"matched_issue": None, "false_positive": True, "factors": {}}
 
     if not planted_issues:
-        return 0.0, {}
+        return _to_open_unit_interval(0.0), {}
 
     best_score = 0.0
     best_breakdown: Dict[str, float] = {}
@@ -197,7 +203,7 @@ def compute_reward(
         best_score *= 0.15
         best_breakdown = {k: v * 0.15 for k, v in best_breakdown.items()}
 
-    best_score = max(0.0, min(1.0, best_score))
+    best_score = _to_open_unit_interval(best_score)
     return best_score, {
         "matched_issue": best_issue_id,
         "factors": best_breakdown,
@@ -230,7 +236,10 @@ def episode_score(
         Fraction of planted issues for which a valid fix was submitted.
     """
     if not planted_issues:
-        return Reward(score=0.0, breakdown={"recall": 0.0, "precision": 1.0, "fix_rate": 0.0})
+        return Reward(
+            score=round(_to_open_unit_interval(0.0), 6),
+            breakdown={"recall": 0.0, "precision": 1.0, "fix_rate": 0.0},
+        )
 
     found_set = set(found_issue_ids)
     fixed_set = set(fix_issue_ids)
@@ -252,7 +261,7 @@ def episode_score(
     fix_rate = len(fixed_set & set(issue_map)) / len(planted_issues)
 
     score = 0.60 * recall + 0.25 * precision + 0.15 * fix_rate
-    score = max(0.0, min(1.0, score))
+    score = _to_open_unit_interval(score)
 
     return Reward(
         score=round(score, 4),

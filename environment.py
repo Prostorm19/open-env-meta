@@ -69,7 +69,7 @@ class CodeReviewEnvironment:
 
     def step(self, action: Action) -> Tuple[Observation, float, bool, Dict[str, Any]]:
         if self._done:
-            return self.state(), 0.0, True, {"error": "Episode done. Call reset()."}
+            return self.state(), 1e-6, True, {"error": "Episode done. Call reset()."}
 
         if action.action_type == "ask_question":
             reward, breakdown = self._handle_question(action)
@@ -96,7 +96,7 @@ class CodeReviewEnvironment:
         answer = get_canned_answer(self.task_id, action.question or "")
         self._clarifications.append(ClarificationQA(question=action.question or "", answer=answer))
         self._last_feedback = f"Q: {action.question} → A: {answer}"
-        return 0.0, {"action_type": "ask_question", "answer": answer}
+        return 1e-6, {"action_type": "ask_question", "answer": answer}
 
     def _handle_report(self, action: Action) -> Tuple[float, dict]:
         reward, breakdown = compute_reward(
