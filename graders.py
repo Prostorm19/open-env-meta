@@ -30,7 +30,7 @@ class Reward(NamedTuple):
 
 
 LINE_TOLERANCE = 3
-OPEN_INTERVAL_EPSILON = 1e-6
+OPEN_INTERVAL_EPSILON = 1e-2
 
 
 def _to_open_unit_interval(value: float, eps: float = OPEN_INTERVAL_EPSILON) -> float:

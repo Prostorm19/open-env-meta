@@ -37,6 +37,7 @@ if HF_TOKEN is None:
     raise ValueError("HF_TOKEN environment variable is required")
 
 ENV_NAME = "code-review-openenv"
+MIN_TASK_SCORE = 0.01
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OpenAI client — must use OpenAI client for all LLM calls
@@ -244,7 +245,7 @@ class EpisodeResult:
     success: bool
     steps: int
     rewards: List[float] = field(default_factory=list)
-    final_score: float = 0.0
+    final_score: float = MIN_TASK_SCORE
 
 
 def run_episode(task_id: str) -> EpisodeResult:
@@ -315,10 +316,10 @@ def run_episode(task_id: str) -> EpisodeResult:
 
     except Exception as exc:
         last_error = str(exc).replace("\n", " ")[:120]
-        final_score = env.final_score() if steps > 0 else 0.0
+        final_score = env.final_score() if steps > 0 else MIN_TASK_SCORE
         success = False
         if not rewards:
-            rewards = [0.0]
+            rewards = [MIN_TASK_SCORE]
         steps = max(steps, len(rewards))
 
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
