@@ -39,6 +39,11 @@ if HF_TOKEN is None:
 
 ENV_NAME = "code-review-openenv"
 MIN_TASK_SCORE = 0.01
+MAX_TASK_SCORE = 0.99
+
+
+def _strict_open_score(value: float) -> float:
+    return max(MIN_TASK_SCORE, min(MAX_TASK_SCORE, float(value)))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OpenAI client — must use OpenAI client for all LLM calls
@@ -288,6 +293,7 @@ def run_episode(task_id: str) -> EpisodeResult:
                 )
 
             obs, reward, done, info = env.step(action)
+            reward = _strict_open_score(reward)
             rewards.append(reward)
             steps = step_idx
 
@@ -312,12 +318,12 @@ def run_episode(task_id: str) -> EpisodeResult:
             if done:
                 break
 
-        final_score = env.final_score()
+        final_score = _strict_open_score(env.final_score())
         success = final_score >= 0.5
 
     except Exception as exc:
         last_error = str(exc).replace("\n", " ")[:120]
-        final_score = env.final_score() if steps > 0 else MIN_TASK_SCORE
+        final_score = _strict_open_score(env.final_score()) if steps > 0 else MIN_TASK_SCORE
         success = False
         if not rewards:
             rewards = [MIN_TASK_SCORE]
@@ -338,7 +344,7 @@ def run_episode(task_id: str) -> EpisodeResult:
         success=success,
         steps=steps,
         rewards=rewards,
-        final_score=final_score,
+        final_score=_strict_open_score(final_score),
     )
 
 
